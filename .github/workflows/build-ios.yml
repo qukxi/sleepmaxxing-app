@@ -7,10 +7,15 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Select Xcode 16.2
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16.2'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -24,7 +29,7 @@ jobs:
       - name: Expo Prebuild
         run: npx expo prebuild --platform ios --clean
 
-      - name: Install Pods
+      - name: Install CocoaPods
         run: cd ios && pod install && cd ..
 
       - name: Build Device Binary with Xcode
