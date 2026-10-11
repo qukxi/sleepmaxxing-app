@@ -1,4 +1,4 @@
-name: Build iOS IPA
+name: Build iOS Device IPA
 
 on:
   workflow_dispatch:
@@ -21,16 +21,31 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install EAS CLI
-        run: npm install -g eas-cli
+      - name: Expo Prebuild
+        run: npx expo prebuild --platform ios --clean
 
-      - name: Build with EAS or Xcode
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      - name: Install Pods
+        run: cd ios && pod install && cd ..
+
+      - name: Build Device Binary with Xcode
         run: |
-          if [ -n "$EXPO_TOKEN" ]; then
-            eas build --platform ios --profile preview --non-interactive
-          else
-            echo "Running local Expo prebuild on macOS..."
-            npx expo prebuild --platform ios
-          fi
+          xcodebuild -workspace ios/sleepmaxxingapp.xcworkspace \
+            -scheme sleepmaxxingapp \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            archive -archivePath build/sleepmaxxingapp.xcarchive
+
+      - name: Create IPA Package
+        run: |
+          mkdir -p Payload
+          cp -r build/sleepmaxxingapp.xcarchive/Products/Applications/sleepmaxxingapp.app Payload/
+          zip -r sleepmaxxing.ipa Payload
+
+      - name: Upload IPA Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sleepmaxxing-device-ipa
+          path: sleepmaxxing.ipa
