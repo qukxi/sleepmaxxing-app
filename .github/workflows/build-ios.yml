@@ -34,9 +34,11 @@ jobs:
       - name: Patch Expo Packages for Swift Compatibility
         run: |
           find node_modules -name "Package.swift" -exec perl -pi -e 's/swift-tools-version:\s*6\.2/swift-tools-version: 6.0/g' {} +
+          find node_modules -name "Package.swift" -exec perl -pi -e 's/swiftLanguageModes:\s*\[\.v6\]/swiftLanguageModes: [.v5]/g' {} +
           perl -pi -e 's/SWIFT_RETURNS_RETAINED RuntimeScheduler/RuntimeScheduler/g' node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h || true
           find node_modules/expo-modules-jsi -name "*.swift" -exec perl -pi -e 's/weak let/weak var/g' {} + || true
           perl -pi -e 's/consuming JavaScriptValuesBuffer,/consuming JavaScriptValuesBuffer/g' node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI/Runtime/JavaScriptRuntime.swift || true
+          perl -pi -e 's/CLANG_COVERAGE_MAPPING=NO \\/CLANG_COVERAGE_MAPPING=NO \\\n    SWIFT_STRICT_CONCURRENCY=minimal \\\n    SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \\/g' node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh || true
 
       - name: Expo Prebuild
         run: npx expo prebuild --platform ios --clean
@@ -53,6 +55,8 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
+            SWIFT_STRICT_CONCURRENCY=minimal \
+            SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \
             archive -archivePath build/sleepmaxxingapp.xcarchive
 
       - name: Create IPA Package
