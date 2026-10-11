@@ -1,5 +1,5 @@
 @echo off
-set "PATH=C:\Users\florzyk\AppData\Local\Programs\nodejs;%PATH%"
+set "PATH=C:\Users\florzyk\AppData\Local\Programs\git\cmd;C:\Users\florzyk\AppData\Local\Programs\nodejs;%PATH%"
 cd /d "%~dp0"
 
 echo ======================================================
