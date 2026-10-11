@@ -7,6 +7,7 @@ import {
   StatusBar,
   Text,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import {
   useFonts,
@@ -33,6 +34,7 @@ import {
   initialProtocols,
   circadianMilestones,
 } from './src/services/mockData';
+import { healthKitService } from './src/services/healthKitService';
 import { SleepSession, BiohackProtocolItem, DaySleepRecord } from './src/types/sleep';
 import { FONTS } from './src/constants/typography';
 
@@ -51,6 +53,8 @@ export default function App() {
   const [protocols, setProtocols] = useState<BiohackProtocolItem[]>(initialProtocols);
   const [streakDays, setStreakDays] = useState(14);
   const [selectedDay, setSelectedDay] = useState<DaySleepRecord | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncSource, setSyncSource] = useState<'apple_health' | 'simulator_fallback'>('simulator_fallback');
 
   const handleSelectPreset = (presetId: 'optimal' | 'moderate' | 'deprived') => {
     setCurrentPresetId(presetId);
@@ -67,6 +71,15 @@ export default function App() {
     setProtocols((prev) =>
       prev.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item))
     );
+  };
+
+  const handleSyncHealthKit = async () => {
+    setIsSyncing(true);
+    await healthKitService.requestPermissions();
+    const result = await healthKitService.syncSleepData();
+    setSession(result.session);
+    setSyncSource(result.source);
+    setIsSyncing(false);
   };
 
   if (!fontsLoaded) {
@@ -87,6 +100,27 @@ export default function App() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {activeTab === 'dashboard' && (
           <View>
+            {/* Apple HealthKit Sync Status Pill */}
+            <TouchableOpacity
+              style={styles.healthSyncBar}
+              onPress={handleSyncHealthKit}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.syncDot,
+                  syncSource === 'apple_health' ? styles.syncDotActive : styles.syncDotSim,
+                ]}
+              />
+              <Text style={styles.syncText}>
+                {isSyncing
+                  ? 'SYNCING APPLE HEALTH...'
+                  : syncSource === 'apple_health'
+                  ? 'APPLE HEALTHKIT • LIVE SYNCED'
+                  : 'APPLE HEALTHKIT • TAP TO SYNC'}
+              </Text>
+            </TouchableOpacity>
+
             {/* Minimal Simulator Selector */}
             <PresetSelector
               currentPresetId={currentPresetId}
@@ -154,7 +188,7 @@ export default function App() {
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>SLEEPMAXXING • JETBRAINS MONO • STRICT BLACK</Text>
+          <Text style={styles.footerText}>SLEEPMAXXING • HEALTHKIT READY • STRICT BLACK</Text>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -176,6 +210,38 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 40,
+  },
+  healthSyncBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#09090B',
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginHorizontal: 16,
+    marginTop: 6,
+    marginBottom: 4,
+    borderWidth: 1,
+    borderColor: '#27272A',
+    gap: 6,
+  },
+  syncDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  syncDotActive: {
+    backgroundColor: '#22C55E',
+  },
+  syncDotSim: {
+    backgroundColor: '#38BDF8',
+  },
+  syncText: {
+    fontSize: 9,
+    fontFamily: FONTS.bold,
+    color: '#A1A1AA',
+    letterSpacing: 0.8,
   },
   matrixInsightsCard: {
     backgroundColor: '#09090B',

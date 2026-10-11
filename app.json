@@ -11,7 +11,13 @@
       "bundleIdentifier": "com.florzyk.sleepmaxxing",
       "userInterfaceStyle": "dark",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSHealthShareUsageDescription": "Sleepmaxxing requires access to your Apple Watch sleep stages, HRV, and resting heart rate to calculate your biohacking recovery score.",
+        "NSHealthUpdateUsageDescription": "Sleepmaxxing requires access to sync your sleep metrics."
+      },
+      "entitlements": {
+        "com.apple.developer.healthkit": true,
+        "com.apple.developer.healthkit.access": []
       }
     },
     "android": {
@@ -27,7 +33,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-font"
+      "expo-font",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Sleepmaxxing requires access to your Apple Watch sleep stages, HRV, and resting heart rate to calculate your biohacking recovery score."
+        }
+      ]
     ],
     "extra": {
       "eas": {
