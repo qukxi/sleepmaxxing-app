@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -55,6 +55,8 @@ export default function App() {
   const [selectedDay, setSelectedDay] = useState<DaySleepRecord | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncSource, setSyncSource] = useState<'apple_health' | 'simulator_fallback'>('simulator_fallback');
+  const [syncMessage, setSyncMessage] = useState<string>('APPLE HEALTHKIT • CONNECTING...');
+  const [matrixDays, setMatrixDays] = useState<DaySleepRecord[]>(historyDays);
 
   const handleSelectPreset = (presetId: 'optimal' | 'moderate' | 'deprived') => {
     setCurrentPresetId(presetId);
@@ -75,12 +77,30 @@ export default function App() {
 
   const handleSyncHealthKit = async () => {
     setIsSyncing(true);
+    setSyncMessage('REQUESTING HEALTH PERMISSIONS...');
     await healthKitService.requestPermissions();
+
+    setSyncMessage('SYNCING APPLE HEALTH DATA...');
     const result = await healthKitService.syncSleepData();
     setSession(result.session);
     setSyncSource(result.source);
+
+    if (result.source === 'apple_health') {
+      setSyncMessage(result.message || 'APPLE HEALTHKIT • LIVE SYNCED');
+      const hist = await healthKitService.syncHistoricalDays();
+      if (hist && hist.length > 0) {
+        setMatrixDays(hist);
+      }
+    } else {
+      const err = healthKitService.getStatus().errorMessage;
+      setSyncMessage(err ? `HEALTH • ${err.toUpperCase()}` : 'APPLE HEALTHKIT • TAP TO SYNC');
+    }
     setIsSyncing(false);
   };
+
+  useEffect(() => {
+    handleSyncHealthKit();
+  }, []);
 
   if (!fontsLoaded) {
     return (
@@ -102,22 +122,31 @@ export default function App() {
           <View>
             {/* Apple HealthKit Sync Status Pill */}
             <TouchableOpacity
-              style={styles.healthSyncBar}
+              style={[
+                styles.healthSyncBar,
+                syncSource === 'apple_health' && styles.healthSyncBarActive,
+              ]}
               onPress={handleSyncHealthKit}
               activeOpacity={0.7}
             >
               <View
                 style={[
                   styles.syncDot,
-                  syncSource === 'apple_health' ? styles.syncDotActive : styles.syncDotSim,
+                  isSyncing
+                    ? styles.syncDotSyncing
+                    : syncSource === 'apple_health'
+                    ? styles.syncDotActive
+                    : styles.syncDotSim,
                 ]}
               />
-              <Text style={styles.syncText}>
-                {isSyncing
-                  ? 'SYNCING APPLE HEALTH...'
-                  : syncSource === 'apple_health'
-                  ? 'APPLE HEALTHKIT • LIVE SYNCED'
-                  : 'APPLE HEALTHKIT • TAP TO SYNC'}
+              <Text
+                style={[
+                  styles.syncText,
+                  syncSource === 'apple_health' && styles.syncTextActive,
+                ]}
+                numberOfLines={1}
+              >
+                {isSyncing ? 'SYNCING APPLE HEALTH...' : syncMessage}
               </Text>
             </TouchableOpacity>
 
@@ -138,7 +167,7 @@ export default function App() {
 
             {/* Sleep Matrix: Day Small Squares Heatmap */}
             <SleepMatrixGrid
-              days={historyDays}
+              days={matrixDays}
               onSelectDay={(day) => setSelectedDay(day)}
             />
 
@@ -156,7 +185,7 @@ export default function App() {
         {activeTab === 'matrix' && (
           <View>
             <SleepMatrixGrid
-              days={historyDays}
+              days={matrixDays}
               onSelectDay={(day) => setSelectedDay(day)}
             />
             <View style={styles.matrixInsightsCard}>
@@ -226,6 +255,10 @@ const styles = StyleSheet.create({
     borderColor: '#27272A',
     gap: 6,
   },
+  healthSyncBarActive: {
+    borderColor: '#15803D',
+    backgroundColor: '#052E1620',
+  },
   syncDot: {
     width: 6,
     height: 6,
@@ -233,6 +266,9 @@ const styles = StyleSheet.create({
   },
   syncDotActive: {
     backgroundColor: '#22C55E',
+  },
+  syncDotSyncing: {
+    backgroundColor: '#EAB308',
   },
   syncDotSim: {
     backgroundColor: '#38BDF8',
@@ -242,6 +278,9 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.bold,
     color: '#A1A1AA',
     letterSpacing: 0.8,
+  },
+  syncTextActive: {
+    color: '#4ADE80',
   },
   matrixInsightsCard: {
     backgroundColor: '#09090B',
