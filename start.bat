@@ -40,7 +40,7 @@ if "%choice%"=="3" (
     echo           GITHUB ACTIONS FREE MAC CLOUD BUILD
     echo ======================================================
     echo.
-    echo 1. Connecting to GitHub...
+    echo 1. Checking GitHub authentication...
     call gh.exe auth status
     if errorlevel 1 (
         echo.
@@ -48,16 +48,22 @@ if "%choice%"=="3" (
         call gh.exe auth login --web -h github.com
     )
     echo.
-    echo 2. Pushing code and triggering Mac Xcode build...
+    echo 2. Pushing changes to GitHub master...
     call git.exe add .
-    call git.exe commit -m "Trigger iOS build" 2>nul
-    call gh.exe repo create sleepmaxxing-app --public --source=. --push 2>nul
-    call git.exe push origin master 2>nul
+    call git.exe commit -m "Update iOS configuration for build" 2>nul
+    call git.exe push origin master
+    if errorlevel 1 (
+        echo.
+        echo [ERROR] Git push failed. Please check your internet or git credentials.
+        goto DONE
+    )
     echo.
-    echo ======================================================
-    echo Build triggered! Check progress at:
-    call gh.exe repo view --web
-    echo ======================================================
+    echo 3. Mac Xcode build is running on GitHub Actions!
+    echo Opening repository Actions page in your browser...
+    call gh.exe run list --limit 1
+    call gh.exe browse --runs 2>nul
+    echo.
+    echo Tip: When finished, run: gh run download --name sleepmaxxing-device-ipa
     goto DONE
 )
 
