@@ -12,10 +12,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Select Xcode 16.3
+      - name: Select Xcode 16.4
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.3'
+          xcode-version: '16.4'
 
       - name: Verify Xcode and Swift Version
         run: |
@@ -33,7 +33,7 @@ jobs:
 
       - name: Patch Expo JSI for Swift Cxx Interop
         run: |
-          sed -i '' 's/SWIFT_RETURNS_RETAINED RuntimeScheduler/RuntimeScheduler/g' node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h || true
+          perl -pi -e 's/SWIFT_RETURNS_RETAINED RuntimeScheduler/RuntimeScheduler/g' node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h || true
 
       - name: Expo Prebuild
         run: npx expo prebuild --platform ios --clean
