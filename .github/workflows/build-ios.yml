@@ -31,9 +31,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Patch Expo Modules JSI RuntimeScheduler Header
+      - name: Patch Expo Modules JSI (Header & Concurrency)
         run: |
-          perl -pi -e 's/SWIFT_RETURNS_RETAINED RuntimeScheduler/RuntimeScheduler/g' node_modules/expo-modules-jsi/apple/Sources/ExpoModulesJSI-Cxx/include/RuntimeScheduler.h
+          node scripts/patch-expo-jsi.js
           perl -pi -e 's/CLANG_COVERAGE_MAPPING=NO \\/CLANG_COVERAGE_MAPPING=NO \\\n    SWIFT_TREAT_WARNINGS_AS_ERRORS=NO \\/g' node_modules/expo-modules-jsi/apple/scripts/build-xcframework.sh || true
 
       - name: Expo Prebuild
