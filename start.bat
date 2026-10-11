@@ -12,7 +12,7 @@ echo.
 echo [1] Launch on iPhone (Expo Go with QR Code - Recommended)
 echo [2] Launch in Browser on PC (Web mode)
 echo [3] Build iOS .ipa on GitHub Actions (Free Mac Cloud)
-echo [4] Check Expo / EAS Account status
+echo [4] Download latest .ipa for Sideloadly
 echo [5] Exit
 echo.
 set /p choice="Select option (1-5, default 1): "
@@ -62,14 +62,26 @@ if "%choice%"=="3" (
     echo Opening repository Actions page in your browser...
     call gh.exe run list --limit 1
     call gh.exe browse --runs 2>nul
-    echo.
-    echo Tip: When finished, run: gh run download --name sleepmaxxing-device-ipa
     goto DONE
 )
 
 if "%choice%"=="4" (
     echo.
-    call eas.cmd whoami
+    echo ======================================================
+    echo       DOWNLOADING LATEST DEVICE IPA ARTIFACT
+    echo ======================================================
+    echo.
+    if exist sleepmaxxing.ipa del /f /q sleepmaxxing.ipa
+    call gh.exe run download --name sleepmaxxing-device-ipa --dir .
+    if exist sleepmaxxing.ipa (
+        echo.
+        echo [SUCCESS] sleepmaxxing.ipa downloaded successfully!
+        echo Opening file in Windows Explorer...
+        explorer.exe /select,sleepmaxxing.ipa
+    ) else (
+        echo.
+        echo [ERROR] Could not download IPA. Please make sure the build is completed in GitHub Actions.
+    )
     goto DONE
 )
 
